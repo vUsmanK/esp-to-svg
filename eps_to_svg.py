@@ -45,16 +45,10 @@ def delete_files(file_path):
         print(f"Error deleting {file_path}: {e}")
 
 def process_folder(folder, processed_folders):
-    # If the folder has been processed already, skip it
-    if folder in processed_folders:
-        return
-    processed_folders.add(folder)
-
     eps_files = [f for f in os.listdir(folder) if f.lower().endswith('.eps')]
 
     if not eps_files:
-        print(f"No .eps files found in {folder}")
-        return
+        return False  # No EPS files found in this folder
 
     for eps_file in eps_files:
         base = os.path.splitext(eps_file)[0]
@@ -67,22 +61,48 @@ def process_folder(folder, processed_folders):
                 delete_files(pdf_path)  # Delete the PDF once SVG is created
                 delete_files(eps_path)  # Delete the EPS file after conversion
 
-    # Recursively process subfolders
-    for subfolder in os.listdir(folder):
-        subfolder_path = os.path.join(folder, subfolder)
-        if os.path.isdir(subfolder_path):
-            process_folder(subfolder_path, processed_folders)
+    return True  # EPS files were found and converted
+
+def check_and_convert(folder, processed_folders):
+    while True:
+        folders_to_check = [folder]
+
+        # Loop through and check folders for EPS files
+        while folders_to_check:
+            current_folder = folders_to_check.pop()
+
+            # If the folder has already been processed, skip it
+            if current_folder in processed_folders:
+                continue
+
+            processed_folders.add(current_folder)
+
+            # Process files in the current folder
+            if process_folder(current_folder, processed_folders):
+                print(f"Converted files in: {current_folder}")
+            else:
+                print(f"No .eps files found in {current_folder}")
+
+            # Add subfolders to the list of folders to check
+            for subfolder in os.listdir(current_folder):
+                subfolder_path = os.path.join(current_folder, subfolder)
+                if os.path.isdir(subfolder_path):
+                    folders_to_check.append(subfolder_path)
+
+        # If no EPS files are found, break the loop
+        if not any(process_folder(folder, processed_folders) for folder in processed_folders):
+            break
+
+    # Notify the user that no more EPS files were found
+    root = tk.Tk()
+    root.withdraw()  # Hide main window
+    messagebox.showinfo("Conversion Complete", "No more EPS files found. All available files have been converted!")
+    root.destroy()
 
 def main():
     folder = os.getcwd()  # Current folder
     processed_folders = set()  # Keep track of processed folders
-    process_folder(folder, processed_folders)
-
-    # Notify the user that the process is complete
-    root = tk.Tk()
-    root.withdraw()  # Hide main window
-    messagebox.showinfo("Conversion Complete", "All EPS files have been converted to SVG!")
-    root.destroy()
+    check_and_convert(folder, processed_folders)
 
 if __name__ == "__main__":
     main()
