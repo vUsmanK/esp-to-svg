@@ -37,19 +37,23 @@ def convert_pdf_to_svg(pdf_path, svg_path):
         print(f"Error converting {pdf_path}: {e}")
         return False
 
-def delete_pdf(pdf_path):
+def delete_files(file_path):
     try:
-        os.remove(pdf_path)
-        print(f"Deleted: {pdf_path}")
+        os.remove(file_path)
+        print(f"Deleted: {file_path}")
     except Exception as e:
-        print(f"Error deleting {pdf_path}: {e}")
+        print(f"Error deleting {file_path}: {e}")
 
-def main():
-    folder = os.getcwd()  # Current folder
+def process_folder(folder, processed_folders):
+    # If the folder has been processed already, skip it
+    if folder in processed_folders:
+        return
+    processed_folders.add(folder)
+
     eps_files = [f for f in os.listdir(folder) if f.lower().endswith('.eps')]
 
     if not eps_files:
-        print("No .eps files found!")
+        print(f"No .eps files found in {folder}")
         return
 
     for eps_file in eps_files:
@@ -60,8 +64,21 @@ def main():
 
         if convert_eps_to_pdf(eps_path, pdf_path):
             if convert_pdf_to_svg(pdf_path, svg_path):
-                delete_pdf(pdf_path)  # Delete the PDF once SVG is created
+                delete_files(pdf_path)  # Delete the PDF once SVG is created
+                delete_files(eps_path)  # Delete the EPS file after conversion
 
+    # Recursively process subfolders
+    for subfolder in os.listdir(folder):
+        subfolder_path = os.path.join(folder, subfolder)
+        if os.path.isdir(subfolder_path):
+            process_folder(subfolder_path, processed_folders)
+
+def main():
+    folder = os.getcwd()  # Current folder
+    processed_folders = set()  # Keep track of processed folders
+    process_folder(folder, processed_folders)
+
+    # Notify the user that the process is complete
     root = tk.Tk()
     root.withdraw()  # Hide main window
     messagebox.showinfo("Conversion Complete", "All EPS files have been converted to SVG!")
