@@ -1,54 +1,63 @@
 import os
 import subprocess
-import tkinter as tk
-from tkinter import messagebox
+import time
 
-def convert_eps_to_pdf(eps_path, pdf_path):
-    gs_path = r"C:\Program Files\gs\gs10.05.0\bin\gswin64c.exe"
-    cmd = [
-        gs_path,
-        "-sDEVICE=pdfwrite",
-        "-dNOPAUSE",
-        "-dBATCH",
-        f"-sOutputFile={pdf_path}",
-        eps_path
-    ]
+# Paths to GhostScript and Inkscape executables
+GS_PATH = r"C:\Program Files\gs\gs10.05.0\bin\gswin64c.exe"
+INKSCAPE_PATH = r"C:\Program Files\Inkscape\bin\inkscape.com"
+
+def log(action, source, target=""):
+    source_name = os.path.basename(source)
+    target_name = os.path.basename(target) if target else ""
+    print(f"[{action}] {source_name} ➡️ {target_name}" if target else f"[{action}] {source_name} ✅")
+
+def convert_eps_to_pdf(eps_file, pdf_file):
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"Converted: {eps_path} ➡️ {pdf_path}")
+        cmd = [
+            GS_PATH,
+            "-dBATCH", "-dNOPAUSE", "-dSAFER",
+            "-sDEVICE=pdfwrite",
+            f"-sOutputFile={pdf_file}",
+            eps_file
+        ]
+        subprocess.run(cmd, check=True)
+        log("EPS ➡️ PDF", eps_file, pdf_file)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error converting {eps_path}: {e}")
+    except subprocess.CalledProcessError:
+        log("❌ EPS2PDF Failed", eps_file)
         return False
 
-def convert_pdf_to_svg(pdf_path, svg_path):
-    inkscape_path = r"C:\Program Files\Inkscape\bin\inkscape.com"
-    cmd = [
-        inkscape_path,
-        pdf_path,
-        "--export-type=svg",
-        f"--export-filename={svg_path}"
-    ]
+def convert_pdf_to_svg(pdf_file, svg_file):
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"Converted: {pdf_path} ➡️ {svg_path}")
+        cmd = [
+            INKSCAPE_PATH,
+            pdf_file,
+            "--export-type=svg",
+            f"--export-filename={svg_file}"
+        ]
+        subprocess.run(cmd, check=True)
+        log("PDF ➡️ SVG", pdf_file, svg_file)
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error converting {pdf_path}: {e}")
+    except subprocess.CalledProcessError:
+        log("❌ PDF2SVG Failed", pdf_file)
         return False
 
-def delete_files(file_path):
-    try:
-        os.remove(file_path)
-        print(f"Deleted: {file_path}")
-    except Exception as e:
-        print(f"Error deleting {file_path}: {e}")
+def delete_files(*files):
+    for file in files:
+        if os.path.exists(file):
+            os.remove(file)
+            log("Delete", file)
 
 def process_folder(folder, processed_folders):
+    folder = os.path.abspath(folder)
+    if folder in processed_folders:
+        return False
+
+    processed_folders.add(folder)
     eps_files = [f for f in os.listdir(folder) if f.lower().endswith('.eps')]
 
     if not eps_files:
-        return False  # No EPS files found in this folder
+        return False
 
     for eps_file in eps_files:
         base = os.path.splitext(eps_file)[0]
@@ -57,52 +66,30 @@ def process_folder(folder, processed_folders):
         svg_path = os.path.join(folder, f"{base}.svg")
 
         if convert_eps_to_pdf(eps_path, pdf_path):
-            if convert_pdf_to_svg(pdf_path, svg_path):
-                delete_files(pdf_path)  # Delete the PDF once SVG is created
-                delete_files(eps_path)  # Delete the EPS file after conversion
+            convert_pdf_to_svg(pdf_path, svg_path)
+            delete_files(pdf_path)
+        else:
+            log("❌ Skipped EPS", eps_path)
 
-    return True  # EPS files were found and converted
+        delete_files(eps_path)
 
-def check_and_convert(folder, processed_folders):
+    return True
+
+def scan_and_convert(base_folder):
+    processed_folders = set()
     while True:
-        folders_to_check = [folder]
+        found_new = False
 
-        # Loop through and check folders for EPS files
-        while folders_to_check:
-            current_folder = folders_to_check.pop()
+        for root, dirs, files in os.walk(base_folder):
+            if process_folder(root, processed_folders):
+                found_new = True
 
-            # If the folder has already been processed, skip it
-            if current_folder in processed_folders:
-                continue
-
-            processed_folders.add(current_folder)
-
-            # Process files in the current folder
-            if process_folder(current_folder, processed_folders):
-                print(f"Converted files in: {current_folder}")
-            else:
-                print(f"No .eps files found in {current_folder}")
-
-            # Add subfolders to the list of folders to check
-            for subfolder in os.listdir(current_folder):
-                subfolder_path = os.path.join(current_folder, subfolder)
-                if os.path.isdir(subfolder_path):
-                    folders_to_check.append(subfolder_path)
-
-        # If no EPS files are found, break the loop
-        if not any(process_folder(folder, processed_folders) for folder in processed_folders):
+        if not found_new:
+            print("\n🎉 No more EPS files found. Conversion complete.")
             break
 
-    # Notify the user that no more EPS files were found
-    root = tk.Tk()
-    root.withdraw()  # Hide main window
-    messagebox.showinfo("Conversion Complete", "No more EPS files found. All available files have been converted!")
-    root.destroy()
-
-def main():
-    folder = os.getcwd()  # Current folder
-    processed_folders = set()  # Keep track of processed folders
-    check_and_convert(folder, processed_folders)
-
 if __name__ == "__main__":
-    main()
+    base_folder = os.path.dirname(os.path.abspath(__file__))
+    print(f"🔍 Starting conversion in: {base_folder}\n")
+    scan_and_convert(base_folder)
+    time.sleep(2)  # Give you time to read the success message if in .exe
