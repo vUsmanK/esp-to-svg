@@ -1,12 +1,13 @@
 # EPS to SVG Converter
 
-This script automates the conversion of `.eps` files to `.svg` format using Ghostscript and Inkscape. It processes all `.eps` files in the current directory, converts them to `.pdf` using Ghostscript, and then converts the `.pdf` files to `.svg` using Inkscape. The intermediate `.pdf` files are deleted after successful conversion.
+This script automates the conversion of `.eps` files to `.svg` format using Ghostscript and Inkscape. It processes all `.eps` files in the current directory and its subfolders, converts them to `.pdf` using Ghostscript, and then converts the `.pdf` files to `.svg` using Inkscape. The intermediate `.pdf` files and original `.eps` files are deleted after successful conversion.
 
 ## Features
 - Batch conversion of `.eps` files to `.svg`.
+- Processes `.eps` files in the current folder and all subfolders.
 - Uses Ghostscript for `.eps` to `.pdf` conversion.
 - Uses Inkscape for `.pdf` to `.svg` conversion.
-- Deletes intermediate `.pdf` files to save space.
+- Deletes intermediate `.pdf` files and original `.eps` files to save space.
 
 ## Prerequisites
 1. **Install Ghostscript**:
@@ -33,7 +34,7 @@ This script automates the conversion of `.eps` files to `.svg` format using Ghos
    ```bash
    python eps_to_svg.py
    ```
-4. Once the script completes, all `.eps` files in the folder will be converted to `.svg`.
+4. The script will process all `.eps` files in the folder and its subfolders. Once the script completes, all `.eps` files will be converted to `.svg`.
 
 ## Turning the Script into an Executable
 To make the script easier to run, you can convert it into a standalone `.exe` file using `pyinstaller`:
@@ -47,8 +48,11 @@ To make the script easier to run, you can convert it into a standalone `.exe` fi
    ```
 3. The `.exe` file will be located in the `dist` folder. You can run it directly without needing Python installed.
 
+### Using the Prebuilt `.exe` File
+If your file paths match the ones provided in this README (e.g., Ghostscript and Inkscape paths), you can download the prebuilt `.exe` file from the `dist` folder. Simply place the `.exe` file in the folder containing your `.eps` files and run it. The script will process all `.eps` files in the folder and its subfolders.
+
 ## Description
-This script is ideal for designers, developers, and anyone working with vector graphics who needs to convert `.eps` files to `.svg` format. It simplifies the process by automating the conversion steps and cleaning up intermediate files.
+This script is ideal for designers, developers, and anyone working with vector graphics who needs to convert `.eps` files to `.svg` format. It simplifies the process by automating the conversion steps, cleaning up intermediate files, and processing subfolders recursively.
 
 ## SEO Keywords
 - EPS to SVG converter
@@ -61,6 +65,8 @@ This script is ideal for designers, developers, and anyone working with vector g
 - EPS to SVG tool
 - Convert EPS files to SVG format
 - EPS to SVG batch processing
+- Recursive EPS to SVG conversion
+- EPS to SVG subfolder processing
 
 ## Troubleshooting
 - **Error: Ghostscript or Inkscape not found**:
@@ -68,7 +74,7 @@ This script is ideal for designers, developers, and anyone working with vector g
 - **Permission Denied**:
   Run the script or `.exe` file with administrator privileges.
 - **No `.eps` files found**:
-  Ensure the `.eps` files are in the same directory as the script.
+  Ensure the `.eps` files are in the same directory or subfolders as the script.
 
 ## License
 This project is open-source and available under the MIT License.
