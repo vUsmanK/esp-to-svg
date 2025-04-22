@@ -50,9 +50,9 @@ def delete_files(*files):
 def find_eps_files(base_folder):
     eps_files = []
     for root, dirs, files in os.walk(base_folder):
-        print(f"📂 Checking: {root}")
+        print(f"📂 Checking: {root}")  # Show each folder being scanned
         for file in files:
-            if file.lower().endswith('.eps') and not file.endswith('.eps.done'):
+            if file.lower().endswith('.eps') and "(done)" not in file:
                 eps_files.append(os.path.join(root, file))
     return eps_files
 
@@ -71,9 +71,14 @@ def convert_all_eps(base_folder):
 
             if convert_eps_to_pdf(eps_path, pdf_path):
                 if convert_pdf_to_svg(pdf_path, svg_path):
-                    delete_files(pdf_path)  # Remove the temporary PDF
-                    processed_eps = eps_path + ".done"
-                    os.rename(eps_path, processed_eps)  # Rename EPS to mark as processed
+                    delete_files(pdf_path)
+
+                    # Rename .eps file to mark as processed
+                    dir_name, base_name = os.path.split(eps_path)
+                    name, ext = os.path.splitext(base_name)
+                    new_name = f"{name} (done){ext}"
+                    processed_eps = os.path.join(dir_name, new_name)
+                    os.rename(eps_path, processed_eps)
                     log("Marked as processed", processed_eps)
 
 if __name__ == "__main__":
