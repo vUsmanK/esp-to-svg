@@ -1,7 +1,6 @@
 import os
 import sys
 import subprocess
-import time
 
 GS_PATH = r"C:\Program Files\gs\gs10.05.0\bin\gswin64c.exe"
 INKSCAPE_PATH = r"C:\Program Files\Inkscape\bin\inkscape.com"
@@ -51,9 +50,9 @@ def delete_files(*files):
 def find_eps_files(base_folder):
     eps_files = []
     for root, dirs, files in os.walk(base_folder):
-        print(f"📂 Checking: {root}")  # Show each folder being scanned
+        print(f"📂 Checking: {root}")
         for file in files:
-            if file.lower().endswith('.eps'):
+            if file.lower().endswith('.eps') and not file.endswith('.eps.done'):
                 eps_files.append(os.path.join(root, file))
     return eps_files
 
@@ -72,8 +71,10 @@ def convert_all_eps(base_folder):
 
             if convert_eps_to_pdf(eps_path, pdf_path):
                 if convert_pdf_to_svg(pdf_path, svg_path):
-                    delete_files(pdf_path)
-                delete_files(eps_path)
+                    delete_files(pdf_path)  # Remove the temporary PDF
+                    processed_eps = eps_path + ".done"
+                    os.rename(eps_path, processed_eps)  # Rename EPS to mark as processed
+                    log("Marked as processed", processed_eps)
 
 if __name__ == "__main__":
     if getattr(sys, 'frozen', False):
